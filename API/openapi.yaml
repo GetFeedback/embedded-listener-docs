@@ -1,0 +1,277 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Feedback Collection API
+  description: The Feedback Collection API handles all operations related to receiving feedback.
+  license:
+    name: Proprietary
+paths:
+  /feedback:
+    post:
+      responses:
+        '202':
+          description: Feedback item successfully queued for processing.
+          headers:
+            Location:
+              description: Location of feedback item resource.
+              schema:
+                type: string
+                format: url
+              example: '/v2/feedback/83eb4be7-138e-41d5-ae18-4a42fe3cd911'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      description: Submit a new feedback item.
+      operationId: create-feedback
+      summary: Submit a new feedback item.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackCreationPayload'
+        description: Data required to submit a feedback item.
+        required: true
+  /feedback/{feedbackItemId}:
+    patch:
+      responses:
+        '202':
+          description: Update of feedback item successfully queued for processing.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      description: Update an existing feedback item.
+      operationId: update-feedback
+      summary: Update an existing feedback item.
+      parameters:
+        - $ref: '#/components/parameters/FeedbackItemId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackUpdatePayload'
+        description: Data required to update a feedback item.
+        required: true
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: The token should be generated with obtained `clientId` & `clientSecret` pair.
+  schemas:
+    Error:
+      type: object
+      required:
+        - errorCode
+        - message
+      properties:
+        errorCode:
+          type: string
+        message:
+          type: string
+    ErrorWithViolations:
+      type: object
+      required:
+        - error_code
+        - message
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
+        violations:
+          type: array
+          items:
+            type: object
+            required:
+              - message
+            properties:
+              property:
+                type: string
+              message:
+                type: string
+      description: Data returned in case of an invalid request.
+    FeedbackCreationPayload:
+      description: Data required to create a new feedback item.
+      type: object
+      x-examples:
+        valid-feedback-item:
+          channel:
+            id: 1118651c-fab6-4e67-b2df-86edd789b9be
+          form:
+            structureVersion: 0
+          client:
+            userAgent: Chrome/87.0.4280.141
+          userInput:
+            8135ad87-79af-4d06-a069-44087bcf196: positive,
+            e56a64bf-9fe7-4726-be1f-6b94b14eabf: It was a really good pizza,
+            88a78509-6b2e-46da-a97c-f8131b70007: 5
+          customerInput:
+            context:
+              cartId: '1973341'
+          submitted: true
+          collectedAt: '1985-04-12T23:20:50.52Z'
+      properties:
+        channel:
+          $ref: '#/components/schemas/Channel'
+        form:
+          $ref: '#/components/schemas/Form'
+        client:
+          $ref: '#/components/schemas/Client'
+        userInput:
+          $ref: '#/components/schemas/UserInput'
+        customerInput:
+          $ref: '#/components/schemas/CustomerInput'
+        submitted:
+          $ref: '#/components/schemas/Submitted'
+        collectedAt:
+          $ref: '#/components/schemas/CollectedAt'
+      required:
+        - channel
+        - form
+        - userInput
+    FeedbackUpdatePayload:
+      description: |
+        Data required to update an existing feedback item.
+        UserInput should be sent cumulatively to avoid a potential data loss.
+        To determine the correct order in which updates should be processed, a sequence number is used.
+        The sequece number must start from 1 and monotonically increase on every subsequent update of the feedback item.
+      type: object
+      properties:
+        userInput:
+          $ref: '#/components/schemas/UserInput'
+        submitted:
+          $ref: '#/components/schemas/Submitted'
+        sequence:
+          type: integer
+          minimum: 1
+          maximum: 9999
+          description: number of the partial being submitted. Partials will be evaluated and cumulated in the order determined by this number.
+          example: 1
+      required:
+        - sequence
+    Client:
+      type: object
+      description: Information regarding the client submitting the data.
+      properties:
+        userAgent:
+          type: string
+        ip:
+          type: string
+          description: |
+            If present, this will be logged as the origin IP, otherwise the referrer IP will be extracted from the
+            request.
+          format: ipv4, ipv6
+          example: 200.35.12.30
+        screen:
+          $ref: '#/components/schemas/Screen'
+        timing:
+          $ref: '#/components/schemas/Timing'
+        url:
+          type: string
+          format: url
+    Channel:
+      type: object
+      description: Channel used to send data.
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Id of the channel.
+    Form:
+      type: object
+      required:
+        - structureVersion
+      properties:
+        structureVersion:
+          type: integer
+          description: Version of the form that generated the feedback item.
+          example: 1
+          minimum: 0
+    UserInput:
+      type: object
+      description: |
+        The user's feedback. The keys of this object are the ids of the elements of the form and the values are
+        the answers to the elements. In case of closed answer elements, the value must be the identifier of the answer
+        option. In case of open text elements, the value must be a string.
+      minProperties: 1
+      properties:
+        '<element-id>':
+          type: string
+          example: The user's answer.
+    CustomerInput:
+      type: object
+      description: Additional data attached to the feedback item.
+      additionalProperties: false
+      required:
+        - context
+      properties:
+        context:
+          description: Object containing metadata of your choosing to enrich the feedback item.
+          example:
+            cartId: '1973341'
+    Submitted:
+      type: boolean
+      default: false
+      description: Signals whether you collected all the data you are interested in.
+    CollectedAt:
+      type: string
+      format: date-time
+      default: now
+      example: '1985-04-12T23:20:50.52Z'
+      description: When the feedback item was collected. If set to a future date, it will be normalized to the time of collection.
+    FeedbackItemId:
+      description: the UUID of the feedback item.
+      allOf:
+        - $ref: '#/components/schemas/Uuid'
+    Screen:
+      type: object
+      description: Properties of the screen.
+      properties:
+        height:
+          type: integer
+        width:
+          type: integer
+    Timing:
+      type: object
+      description: Timing collected while interacting with the form.
+      properties:
+        contentRenderingEnd:
+          type: integer
+          description: |
+            Milliseconds needed to finish rendering the form. If a form is displayed across multiple pages, it should
+            refer to the first page.
+    Uuid:
+      type: string
+      format: uuid
+      example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+  parameters:
+    FeedbackItemId:
+      description: The id of a feedback item.
+      name: feedbackItemId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/FeedbackItemId'
+  responses:
+    BadRequest:
+      description: 'Invalid request - feedback item data is empty or undefined.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorWithViolations'
+    ServerError:
+      description: 'Internal server error'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+servers:
+  - url: 'https://collect.getfbk.com/v2'
+    description: Feedback Collection base URL.
+security:
+  - bearerAuth: []
