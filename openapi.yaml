@@ -17,7 +17,7 @@ paths:
               schema:
                 type: string
                 format: url
-              example: 'https://feedback-collection.api.staging.usabilla.com/v2/feedback/83eb4be7-138e-41d5-ae18-4a42fe3cd911'
+              example: '/v2/feedback/83eb4be7-138e-41d5-ae18-4a42fe3cd911'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -54,6 +54,12 @@ paths:
         description: Data required to update a feedback item.
         required: true
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: The token should be generated with obtained `clientId` & `clientSecret` pair.
   schemas:
     Error:
       type: object
@@ -102,10 +108,6 @@ components:
             8135ad87-79af-4d06-a069-44087bcf196: positive,
             e56a64bf-9fe7-4726-be1f-6b94b14eabf: It was a really good pizza,
             88a78509-6b2e-46da-a97c-f8131b70007: 5
-          userInteractions:
-            elements:
-              notApplicable:
-                - id: '1118651c-fab6-4e67-b2df-86edd789b9be'
           customerInput:
             context:
               cartId: '1973341'
@@ -120,8 +122,6 @@ components:
           $ref: '#/components/schemas/Client'
         userInput:
           $ref: '#/components/schemas/UserInput'
-        userInteractions:
-          $ref: '#/components/schemas/UserInteractions'
         customerInput:
           $ref: '#/components/schemas/CustomerInput'
         submitted:
@@ -135,25 +135,23 @@ components:
     FeedbackUpdatePayload:
       description: |
         Data required to update an existing feedback item.
-        UserInput and UserInteractions should be sent cumulatively, since a missing entry in any of the properties of the payload
-        in a later update will be interpreted as a redaction of the previous input.
+        UserInput should be sent cumulatively to avoid a potential data loss.
         To determine the correct order in which updates should be processed, a sequence number is used.
         The sequece number must start from 1 and monotonically increase on every subsequent update of the feedback item.
       type: object
       properties:
         userInput:
           $ref: '#/components/schemas/UserInput'
-        userInteractions:
-          $ref: '#/components/schemas/UserInteractions'
         submitted:
           $ref: '#/components/schemas/Submitted'
-        collectedAt:
-          $ref: '#/components/schemas/CollectedAt'
         sequence:
           type: integer
           minimum: 1
           maximum: 9999
           description: number of the partial being submitted. Partials will be evaluated and cumulated in the order determined by this number.
+          example: 1
+      required:
+        - sequence
     Client:
       type: object
       description: Information regarding the client submitting the data.
@@ -179,20 +177,11 @@ components:
       description: Channel used to send data.
       required:
         - id
-        - platform
       properties:
         id:
           type: string
           format: uuid
           description: Id of the channel.
-        platform:
-          type: string
-          enum:
-            - website
-            - app
-            - email
-            - third-party-client
-            - embedded-listener
     Form:
       type: object
       required:
@@ -214,24 +203,6 @@ components:
         '<element-id>':
           type: string
           example: The user's answer.
-    UserInteractions:
-      type: object
-      properties:
-        elements:
-          type:
-            object
-          properties:
-            notApplicable:
-              description: List of elements explicitly maked as not applicable by the end user.
-              type: array
-              items:
-                type: object
-                required:
-                  - id
-                properties:
-                  id:
-                    type: string
-                    format: uuid
     CustomerInput:
       type: object
       description: Additional data attached to the feedback item.
@@ -251,7 +222,7 @@ components:
       type: string
       format: date-time
       default: now
-      example: 1985-04-12T23:20:50.52Z
+      example: '1985-04-12T23:20:50.52Z'
       description: When the feedback item was collected. If set to a future date, it will be normalized to the time of collection.
     FeedbackItemId:
       description: the UUID of the feedback item.
@@ -300,5 +271,7 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
 servers:
-  - url: 'https://feedback-collection.api.staging.usabilla.com/v2'
-    description: Staging
+  - url: 'https://collect.getfbk.com/v2'
+    description: Feedback Collection base URL.
+security:
+  - bearerAuth: []
