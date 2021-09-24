@@ -59,7 +59,9 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: The token should be generated with obtained `clientId` & `clientSecret` pair.
+      description: |
+        The token can be obtained from our authorization service by exchanging your `clientId` and `clientSecret`.
+        For more information on the matter, please consult our guide at https://getfeedback.github.io/embedded-listener-docs/developer-guide/#requesting-an-access-token
   schemas:
     Error:
       type: object
