@@ -203,8 +203,19 @@ components:
       minProperties: 1
       properties:
         '<element-id>':
-          type: string
-          example: The user's answer.
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+            - type: array
+              items:
+                type: object
+                properties:
+                  rank:
+                    type: string
+                  identifier:
+                    type: string
     CustomerInput:
       type: object
       description: Additional data attached to the feedback item.
