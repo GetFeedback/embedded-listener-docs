@@ -1,4 +1,4 @@
-# GetFeedback Digital
+# Developer Guide
 
 ## Document Version Management
 
@@ -17,6 +17,14 @@
    <td>1.0
    </td>
    <td>First version
+   </td>
+  </tr>
+  <tr>
+   <td>04/05/2022
+   </td>
+   <td>1.1
+   </td>
+   <td>Document how to retrieve JSON configuration of a form programmatically
    </td>
   </tr>
 </table>
@@ -120,9 +128,25 @@ In order for the **first distribution channel** to be created, you’ll be promp
 
 We’ll be gathering feedback from our custom-built _Pepperoni-app_, hence we decide to name this channel the _Pepperoni channel_.
 
-### Copying the JSON configuration from the form editor
+### Retrieving the JSON configuration
 
-We can now copy the JSON configuration of the form and channel we just created from the channel setup screen.
+It is now possible to retrieve the JSON configuration of the form and channel we just created. In order to do so, we head to the *Channel setup* page where two options are displayed:
+
+1. We can copy the JSON configuration directly from this page. This option is better suited for scenarios where internet connection is limited.
+2. We can copy the URL to retrieve the JSON configuration programmatically. This method is best to automatically keep your form up to date with its latest published version.
+
+Regardless of the approach we choose, the resulting JSON configuration is exactly the same.
+
+The resource location is predictable and it adheres to the following pattern:
+
+```
+https://delivery.eu.getfbk.com/channels/<CHANNEL_ID>/<LOCALE>
+```
+
+where:
+
+- `CHANNEL_ID` is the id of the channel associated to the form.
+- `LOCALE` is the language code specifying the localization of the form. This is either a specific locale or the value `main`, alias for "main language". Because this alias will always exists for every configuration, it may be used as a fallback in case a specific localized configuration is not found.
 
 ![channel setup](images/channel-setup.png "channel setup")
 
@@ -135,85 +159,94 @@ What follows is the JSON configuration of the form we just created.
 
 ```json
 {
-  "channel": {
-    "active": false,
-    "id": "4ee7d1f5-3d5c-4da3-ad8c-6202d8018e42"
+  "form" : {
+    "id" : "9e688d21-2268-42db-a151-4bd4eb87263a",
+    "name" : "Mamma Mia Pizzeria - Survey"
   },
-  "structure": {
-    "elements": [
-      {
-        "answerOptions": [
-          {
-            "id": "21fb8d15-0649-4b0a-95c9-3aacfde96a34",
-            "identifier": "1",
-            "label": "Hate it"
-          },
-          {
-            "id": "18dc949c-18c0-4314-8bfe-b0711c5856b2",
-            "identifier": "2",
-            "label": "Dislike it"
-          },
-          {
-            "id": "7ea31c2f-e679-43a9-8ece-96792d6a47ed",
-            "identifier": "3",
-            "label": "Neutral"
-          },
-          {
-            "id": "fa2b781d-54ba-4f3c-9636-2105a9a3378b",
-            "identifier": "4",
-            "label": "Like it"
-          },
-          {
-            "id": "9cf2430c-d935-4881-b53d-9596c5629e62",
-            "identifier": "5",
-            "label": "Love it"
-          }
-        ],
-        "id": "695e8598-a04e-4c9e-8a4c-d0b9b3da035e",
-        "identifier": "pizza-opinion",
-        "title": "Are you satisfied with our 🍕 ?",
-        "type": "mood"
-      },
-      {
-        "answerOptions": [
-          {
-            "id": "b748a054-5360-4dff-81fe-27abc7890df5",
-            "identifier": "positive",
-            "label": "Like"
-          },
-          {
-            "id": "4e959ea7-1114-44dd-b7dd-47146e58e285",
-            "identifier": "negative",
-            "label": "Dislike"
-          }
-        ],
-        "id": "fdd0fe35-0ffe-4484-9380-82ba9e158219",
-        "identifier": "recommend-yes-no",
-        "title": "Would you recommend us to your friends and colleagues?",
-        "type": "polar"
-      },
-      {
-        "id": "1b3aa244-4f79-4e84-84d8-68c9039c796a",
-        "identifier": "comments-and-suggestions",
-        "title": "Do you have any comment or suggestion?",
-        "type": "text"
-      }
-    ],
-    "mainLanguage": "en-US",
-    "version": 0
+  "structure" : {
+    "links" : [ ],
+    "version" : 0,
+    "elements" : [ {
+      "id" : "695e8598-a04e-4c9e-8a4c-d0b9b3da035e",
+      "type" : "Mood",
+      "identifier" : "pizza-opinion",
+      "answerOptions" : [ {
+        "id" : "21fb8d15-0649-4b0a-95c9-3aacfde96a34",
+        "identifier" : "1",
+        "label" : "Hate it"
+      }, {
+        "id" : "18dc949c-18c0-4314-8bfe-b0711c5856b2",
+        "identifier" : "2",
+        "label" : "Dislike it"
+      }, {
+        "id" : "7ea31c2f-e679-43a9-8ece-96792d6a47ed",
+        "identifier" : "3",
+        "label" : "Neutral"
+      }, {
+        "id" : "fa2b781d-54ba-4f3c-9636-2105a9a3378b",
+        "identifier" : "4",
+        "label" : "Like it"
+      }, {
+        "id" : "9cf2430c-d935-4881-b53d-9596c5629e62",
+        "identifier" : "5",
+        "label" : "Love it"
+      } ],
+      "title" : "Are you satisfied with our 🍕 ?"
+    }, {
+      "id" : "fdd0fe35-0ffe-4484-9380-82ba9e158219",
+      "type" : "Polar",
+      "identifier" : "recommend-yes-no",
+      "answerOptions" : [ {
+        "id" : "b748a054-5360-4dff-81fe-27abc7890df5",
+        "identifier" : "positive",
+        "label" : "Like"
+      }, {
+        "id" : "4e959ea7-1114-44dd-b7dd-47146e58e285",
+        "identifier" : "negative",
+        "label" : "Dislike"
+      } ],
+      "title" : "Would you recommend us to your friends and colleagues?"
+    }, {
+      "id" : "1b3aa244-4f79-4e84-84d8-68c9039c796a",
+      "type" : "Text",
+      "identifier" : "comments-and-suggestions",
+      "title" : "Do you have any comment or suggestion?"
+    } ],
+    "navigation" : {
+      "submitFormLabel" : "Submit",
+      "confirmAnswerLabel" : "OK",
+      "thankYouMessageBody" : "Your feedback is much appreciated.",
+      "thankYouMessageHeader" : "Thanks!"
+    },
+    "mainLanguage" : "en-US",
+    "currentLanguage" : "en-US"
+  },
+  "channel" : {
+    "active" : false,
+    "formId" : "9e688d21-2268-42db-a151-4bd4eb87263a",
+    "platform" : "embedded-listener",
+    "id" : "4ee7d1f5-3d5c-4da3-ad8c-6202d8018e42"
   }
 }
 ```
 
 We can find the following properties in the JSON configuration:
 
-* **Channel:**
-    * **Id:** The id of the channel. Needed in order to submit feedback items to our RESTful endpoints.
-    * **Active:** a status that indicates if the survey should be displayed or not, but it’s up to the implementer to define its actual behavior.
-* **Structure:**
-    * **Version:** a positive integer that specifies the version of the form.
-    * **Elements:** an array of objects representing each element of the form. Each element has the id, the identifier which is user-defined, its type, and the title. Depending on the type, an element can have additional properties, for instance, an array of answer options, each one with its own id, identifier, and label. Note that the elements are ordered as they appear in the editor, but the answer options’ order, if present, is not guaranteed.
-    * **MainLanguage:** a locale string compliant with ISO 639-2 defining the main language of the form. For now, a form can only have one language.
+* `form` _object_:
+    * `id` _UUID_: the id of the form this channel refers to.
+    * `name` _string_: the name of the form this channel refers to. Note that this value change as soon as the name of the form is changed, hence it does not need that a new version of the form is published. Please, take it into consideration if you want to display this value into your clients.
+* `structure` _object_:
+    * `links` _array_: for now, you can ignore this property.
+    * `version` _int_: a positive integer that specifies the version of the form.
+    * `elements` _array_: an array of objects representing each element of the form. Each element has the id, the identifier which is user-defined, its type, and the title. Depending on the type, an element can have additional properties, for instance, an array of answer options, each one with its own id, identifier, and label. Note that the elements are ordered as they appear in the editor, but the answer options’ order, if present, is not guaranteed.
+    * `navigation` _object_: an object with translations for the navigation's labels (i.e., the labels specified in the *Form Settings* panel).
+    * `mainLanguage` _string_: a locale string compliant with ISO 639-2 defining the main language of the form. For now, a form can only have one language.
+    * `currentLanguage` _string_: a locale string compliant with ISO 639-2 defining the language of this form configuration. For now, a form can only have one language, hence `currentLanguage` is equal to `mainLanguage`.
+* `channel` _object_:
+    * `active` _bool_: a status that indicates if the survey should be displayed or not, but it’s up to the implementer to define its actual behavior.
+    * `formId` _UUID_: the id of the form this channel refers to.
+    * `platform` _string_: the platform of the channel. This value may refer to multiple platforms (see section [Channels](#Channels)), but this guide expects it to be `embedded-listener`.
+    * `id` _UUID_: The id of the channel. Needed in order to submit feedback items to our RESTful endpoints.
 
 Regarding the elements, as opposed to the title, the identifier **SHOULD NEVER** be shown to any user taking the survey, only the question’s title should be displayed when the survey is rendered. As the implementer, you must take this into consideration when developing the client’s interface.
 
@@ -288,14 +321,16 @@ The payload **MUST** contain the following properties:
 
 The payload **CAN** have the following properties:
 
-* `userInput`: as documented above
-* `submitted`: as documented above
+* `userInput` _object_: as documented above
+* `submitted` _bool_: as documented above
 
 ### Securing your data
 
 At GetFeedback we value the privacy and security of your data, for this reason, we do not allow unauthenticated requests to our feedback collection services.
 
 In order to submit feedback items via HTTP requests, you always need to provide an access token. The procedure to request an access token is described in the following sections.
+
+> **Note:** while we enforce authentication for submitting feedback items, we don't require it upon form configuration retrieval.
 
 ![authentication schema](images/auth-schema.png "authentication schema")
 
@@ -395,24 +430,20 @@ curl --request PATCH \
   }'
 ```
 
-## Restrictions and limitations
-
-#### Channel configuration
-
-Currently, it is not possible to programmatically retrieve the JSON configuration of a Form from a dedicated API endpoint. For the time being, the JSON configuration of a Form will only be available on the Channel set-up page in the official GetFeedback web application.
-
-**This means that any changes made to a Form, even if published, will require a manual update on your application to become effective.**
-
+## Caveats
 
 #### Rate limiting
 
-The current rate-limit for total number of **requests per second** **is 10**. Any request exceeding the limit will be blocked by our services.
+The current rate-limit for total number of **requests per second** **is 10** to submit feedback items. Any request exceeding the limit will be blocked by our services.
 
 If you’re planning on exporting a large set of data that might exceed the limit, please reach out to customer support to discuss your use case.
-
 
 #### Exception handling
 
 It’s the implementor’s responsibility to ensure that the outcome of a feedback submission did not result in an exception. Please note that an exception may be raised on a later stage as each feedback item accepted by our collection endpoint will be further processed.
 
 Any unhandled exception may result in potential data-loss, hence, re-submitting failed requests in case of temporary service unavailability is a must if you want to guarantee the completeness of your data.
+
+#### Content-type of JSON configurations of forms
+
+The HTTP response returned by a form configuration retrieval request returns the header `Content-type: application/octet-stream`. The correct MIME type is `application/json` and the content SHOULD be interpreted correspondingly. We expect to fix this in future versions of the service.
