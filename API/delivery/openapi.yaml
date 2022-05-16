@@ -1,0 +1,326 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Delivery API
+  description: The Delivery API handles all operations related to distribute configurations of forms.
+  license:
+    name: Proprietary
+paths:
+  /channels/{channelId}/{locale}:
+    get:
+      tags:
+        - ""
+      summary: Retrieve a channel configuration
+      description: Retrieve a single localized channel configuration.
+      operationId: get-channel-configuration
+      parameters:
+        - $ref: '#/components/parameters/ChannelId'
+        - $ref: '#/components/parameters/Locale'
+      responses:
+        '200':
+          $ref: '#/components/responses/ChannelConfiguration'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+components:
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+      example: 88BF3169-105B-4952-8494-9655BA878E65
+    ChannelId:
+      description: the UUID of the channel
+      allOf:
+        - $ref: '#/components/schemas/Uuid'
+    Locale:
+      type: string
+      description: As defined per https://tools.ietf.org/rfc/bcp/bcp47.txt
+      example: it-IT
+    Label:
+      type: string
+      maxLength: 600
+    Title:
+      type: string
+      maxLength: 600
+    Navigation:
+      type: object
+      description: Configuration representing the text displayed on the survey's navigation components for the language selected
+      required:
+        - thankYouMessageHeader
+        - thankYouMessageBody
+        - confirmAnswerLabel
+        - submitFormLabel
+      properties:
+        thankYouMessageHeader:
+          description: The header of the thank you message
+          type: string
+        thankYouMessageBody:
+          description: The body of the thank you message
+          type: string
+        confirmAnswerLabel:
+          description: The label to confirm an answer inputted
+          type: string
+        submitFormLabel:
+          description: The label to submit the responses of a form
+          type: string
+    Platform:
+      type: string
+      example: embedded-listener
+      enum:
+        - embedded-listener
+    ElementType:
+      description: The type of the element
+      enum:
+        - choice
+        - mood
+        - nps
+        - rating
+        - text
+        - polar
+        - slider
+        - ranking
+      type: string
+    ElementIdentifier:
+      description: the unique text identifier for an element inside the form
+      type: string
+      maxLength: 200
+      minLength: 1
+      example: an_identifier_with_undescore_text
+    Element:
+      type: object
+      description: An element belonging to a form
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        type:
+          $ref: '#/components/schemas/ElementType'
+        identifier:
+          $ref: '#/components/schemas/ElementIdentifier'
+        title:
+          $ref: '#/components/schemas/Title'
+        required:
+          type: boolean
+          description: Whether a client displaying this element should force the user to fill it in before proceding
+      required:
+        - id
+        - type
+        - identifier
+        - title
+    TextElement:
+      allOf:
+        - $ref: '#/components/schemas/Element'
+        - type: object
+          properties:
+            maxCharacterCount:
+              type: integer
+              minimum: -1
+              default: -1
+              maximum: 10000
+    RateableElement:
+      allOf:
+        - $ref: '#/components/schemas/Element'
+        - type: object
+          description: An element belonging to a form that can contain multiple answer options
+          properties:
+            answerOptions:
+              type: array
+              items:
+                type: object
+                description: the answer options that rateable elements contains
+                properties:
+                  id:
+                    description: the UUID for the answer option
+                    allOf:
+                      - $ref: '#/components/schemas/Uuid'
+                  identifier:
+                    type: string
+                  label:
+                    $ref: '#/components/schemas/Label'
+                required:
+                  - id
+                  - identifier
+                  - label
+          required:
+            - answerOptions
+    ChoiceElement:
+      allOf:
+        - $ref: '#/components/schemas/RateableElement'
+        - type: object
+          description: An element belonging to a form, that can contain multiple answer options, and can allow for multiple answers to be selected by the end user
+          properties:
+            allowMultiple:
+              description: Indication whether this element allows multiple answer options to be selected
+              type: boolean
+          required:
+            - allowMultiple
+    NPSElement:
+      allOf:
+        - $ref: '#/components/schemas/RateableElement'
+        - type: object
+          description: An element that contains 11 answer options statically generated.
+          properties:
+            labelLow:
+              $ref: '#/components/schemas/Label'
+            labelHigh:
+              $ref: '#/components/schemas/Label'
+          required:
+            - labelLow
+            - labelHigh
+    SliderElement:
+      allOf:
+        - $ref: '#/components/schemas/Element'
+        - type: object
+          description: An element representing a set of values within a certain range
+          properties:
+            minimum:
+              type: integer
+              minimum: 0
+              maximum: 0
+            maximum:
+              type: integer
+              minimum: 1
+              maximum: 1000000
+            start:
+              type: integer
+              minimum: 0
+            labelLow:
+              $ref: '#/components/schemas/Label'
+            labelMiddle:
+              $ref: '#/components/schemas/Label'
+            labelHigh:
+              $ref: '#/components/schemas/Label'
+          required:
+            - minimum
+            - maximum
+            - start
+            - labelLow
+            - labelMiddle
+            - labelHigh
+    RankingElement:
+      $ref: '#/components/schemas/RateableElement'
+    MoodElement:
+      $ref: '#/components/schemas/RateableElement'
+    PolarElement:
+      $ref: '#/components/schemas/RateableElement'
+    RatingElement:
+      $ref: '#/components/schemas/RateableElement'
+    ChannelConfiguration:
+      type: object
+      properties:
+        form:
+          type: object
+          properties: 
+            id: 
+              description: The id of the form
+              allOf:
+                - $ref: '#/components/schemas/Uuid'
+            name:
+              description: the name of the form
+              type: string
+          required:
+            - id
+            - name
+        structure:
+          type: object
+          properties: 
+            links: 
+              $ref: '#/components/schemas/Link'
+            version: 
+              $ref: '#/components/schemas/Version'
+            elements: 
+              type: array
+              minItems: 1
+              items:
+                anyOf:
+                  - $ref: '#/components/schemas/ChoiceElement'
+                  - $ref: '#/components/schemas/MoodElement'
+                  - $ref: '#/components/schemas/NPSElement'
+                  - $ref: '#/components/schemas/RatingElement'
+                  - $ref: '#/components/schemas/TextElement'
+                  - $ref: '#/components/schemas/PolarElement'
+                  - $ref: '#/components/schemas/SliderElement'
+                  - $ref: '#/components/schemas/RankingElement'
+                discriminator:
+                  propertyName: type
+                  mapping:
+                    choice: '#/components/schemas/ChoiceElement'
+                    mood: '#/components/schemas/MoodElement'
+                    nps: '#/components/schemas/NPSElement'
+                    rating: '#/components/schemas/RatingElement'
+                    text: '#/components/schemas/TextElement'
+                    polar: '#/components/schemas/PolarElement'
+                    slider: '#/components/schemas/SliderElement'
+                    ranking: '#/components/schemas/RankingElement'
+            navigation: 
+              $ref: '#/components/schemas/Navigation'
+            mainLanguage: 
+              $ref: '#/components/schemas/Locale'
+            currentLanguage: 
+              $ref: '#/components/schemas/Locale'
+          required:
+            - version
+            - elements
+            - navigation
+            - mainLanguage
+            - currentLanguage
+        channel: 
+          type: object
+          properties: 
+            active: 
+              type: boolean
+            formId: 
+              description: The id of the form
+              allOf:
+                - $ref: '#/components/schemas/Uuid'
+            platform: 
+              $ref: '#/components/schemas/Platform'
+            id: 
+              description: The id of the channel
+              allOf:
+                - $ref: '#/components/schemas/Uuid'
+          required:
+            - active
+            - formId
+            - platform
+            - id
+      required:
+        - form
+        - structure
+        - channel
+    Link:
+      type: array
+      items:
+        type: object
+    Version:
+      type: integer
+      minimum: 0
+  responses:
+    ChannelConfiguration:
+      description: Channel configuration is successfully retrieved
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChannelConfiguration'
+    NotFound:
+      description: Resource not found
+    ServerError:
+      description: Internal server error
+  parameters:
+    ChannelId:
+      name: channelId
+      in: path
+      required: true
+      description: The UUID of the Channel
+      schema:
+        $ref: '#/components/schemas/ChannelId'
+    Locale:
+      name: locale
+      in: path
+      required: true
+      description: A language locale as defined per https://tools.ietf.org/rfc/bcp/bcp47.txt. The locale can be substituted by `main` as an alias to the main language of the form
+      schema:
+        $ref: '#/components/schemas/Locale'
+servers:
+  - url: 'https://delivery.eu.getfbk.com/'
+    description: Delivery base URL.
